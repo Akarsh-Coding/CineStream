@@ -1,9 +1,5 @@
 import { useEffect, useRef } from "react";
 
-/**
- * Fires `onIntersect` when the returned ref's element scrolls into view.
- * Attach the ref to a sentinel <div> at the bottom of a list.
- */
 export function useInfiniteScroll({ onIntersect, enabled = true, rootMargin = "400px" }) {
   const sentinelRef = useRef(null);
 

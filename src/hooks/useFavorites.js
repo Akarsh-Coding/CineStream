@@ -2,9 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 
 const STORAGE_KEY = "cine-stream:favorites";
 
-/**
- * Persists a "My Favorites" array to localStorage, synced on every change.
- */
 export function useFavorites() {
   const [favorites, setFavorites] = useState([]);
 

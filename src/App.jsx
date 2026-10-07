@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { Heart, Search, AlertTriangle, Loader2 } from "lucide-react";
+import { Search, AlertTriangle, Loader2 } from "lucide-react";
 import Header from "./components/Header";
 import MovieGrid from "./components/MovieGrid";
 import EmptyState from "./components/EmptyState";
+import WatchlistView from "./components/WatchlistView";
 import { fetchMovies } from "./api/tmdb";
 import { useDebouncedValue } from "./hooks/useDebouncedValue";
-import { useFavorites } from "./hooks/useFavorites";
+import { useWatchlist } from "./hooks/useWatchlist";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import "./App.css";
 
 export default function App() {
-  const [view, setView] = useState("discover"); // discover | favorites
+  const [view, setView] = useState("discover"); // discover | watchlist
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, 500);
 
@@ -21,8 +22,19 @@ export default function App() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
 
-  const { favorites, toggleFavorite } = useFavorites();
   const requestIdRef = useRef(0);
+
+  const {
+    watchlist,
+    loading: watchlistLoading,
+    error: watchlistError,
+    entryFor,
+    addToWatchlist,
+    removeFromWatchlist,
+    markAsWatched,
+    markAsWantToWatch,
+    submitReview,
+  } = useWatchlist();
 
   const loadPage = useCallback(async (pageNum, q) => {
     const myRequestId = ++requestIdRef.current;
@@ -67,11 +79,27 @@ export default function App() {
     enabled: view === "discover",
   });
 
-  const favoriteIds = useMemo(() => new Set(favorites.map((m) => m.id)), [favorites]);
-  const listToShow = view === "favorites" ? favorites : movies;
+  const watchlistIds = useMemo(() => new Set(watchlist.map((p) => p.movieId)), [watchlist]);
+
+  const handleToggleWatchlist = useCallback(
+    async (movie) => {
+      try {
+        const existing = entryFor(movie.id);
+        if (existing) {
+          await removeFromWatchlist(existing._id);
+        } else {
+          await addToWatchlist(movie);
+        }
+      } catch (err) {
+        console.error("Failed to update watchlist:", err);
+      }
+    },
+    [entryFor, addToWatchlist, removeFromWatchlist]
+  );
+
   const headline =
-    view === "favorites"
-      ? "My favorites"
+    view === "watchlist"
+      ? "My watchlist"
       : debouncedQuery.trim()
       ? `Results for "${debouncedQuery.trim()}"`
       : "Now trending";
@@ -81,7 +109,7 @@ export default function App() {
       <Header
         view={view}
         onChangeView={setView}
-        favoriteCount={favorites.length}
+        watchlistCount={watchlist.length}
         query={query}
         onChangeQuery={setQuery}
       />
@@ -89,41 +117,47 @@ export default function App() {
       <main className="main">
         <h2 className="headline">{headline}</h2>
 
-        {error && (
+        {view === "discover" && error && (
           <div className="banner banner--error">
             <AlertTriangle size={16} /> {error}
           </div>
         )}
 
-        {view === "favorites" && favorites.length === 0 && (
-          <EmptyState
-            icon={Heart}
-            title="No favorites yet"
-            subtitle="Tap the heart on any poster in Discover to save it here."
+        {view === "watchlist" ? (
+          <WatchlistView
+            watchlist={watchlist}
+            loading={watchlistLoading}
+            error={watchlistError}
+            onMarkWatched={markAsWatched}
+            onMarkWantToWatch={markAsWantToWatch}
+            onRemove={removeFromWatchlist}
+            onSubmitReview={submitReview}
           />
-        )}
+        ) : (
+          <>
+            {!loading && movies.length === 0 && !error && (
+              <EmptyState icon={Search} title="Nothing found" subtitle="Try a different title." />
+            )}
 
-        {view === "discover" && !loading && movies.length === 0 && !error && (
-          <EmptyState icon={Search} title="Nothing found" subtitle="Try a different title." />
-        )}
+            <MovieGrid
+              movies={movies}
+              watchlistIds={watchlistIds}
+              onToggleWatchlist={handleToggleWatchlist}
+              loading={loading}
+              sentinelRef={sentinelRef}
+              showSentinel
+            />
 
-        <MovieGrid
-          movies={listToShow}
-          favoriteIds={favoriteIds}
-          onToggleFavorite={toggleFavorite}
-          loading={view === "discover" && loading}
-          sentinelRef={sentinelRef}
-          showSentinel={view === "discover"}
-        />
+            {loadingMore && (
+              <div className="loading-more">
+                <Loader2 className="spin" size={18} /> Loading more
+              </div>
+            )}
 
-        {loadingMore && (
-          <div className="loading-more">
-            <Loader2 className="spin" size={18} /> Loading more
-          </div>
-        )}
-
-        {view === "discover" && !loading && !loadingMore && movies.length > 0 && page >= totalPages && (
-          <p className="end-of-reel">&mdash; end of reel &mdash;</p>
+            {!loading && !loadingMore && movies.length > 0 && page >= totalPages && (
+              <p className="end-of-reel">&mdash; end of reel &mdash;</p>
+            )}
+          </>
         )}
       </main>
     </div>

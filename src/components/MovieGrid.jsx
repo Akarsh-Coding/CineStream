@@ -3,8 +3,8 @@ import SkeletonCard from "./SkeletonCard";
 
 export default function MovieGrid({
   movies,
-  favoriteIds,
-  onToggleFavorite,
+  watchlistIds,
+  onToggleWatchlist,
   loading,
   sentinelRef,
   showSentinel,
@@ -16,8 +16,8 @@ export default function MovieGrid({
           <MovieCard
             key={movie.id}
             movie={movie}
-            isFavorite={favoriteIds.has(movie.id)}
-            onToggleFavorite={onToggleFavorite}
+            inWatchlist={watchlistIds.has(movie.id)}
+            onToggleWatchlist={onToggleWatchlist}
           />
         ))}
         {loading && Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={`s-${i}`} />)}

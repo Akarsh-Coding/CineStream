@@ -1,6 +1,6 @@
 import { Film, Search, X } from "lucide-react";
 
-export default function Header({ view, onChangeView, favoriteCount, query, onChangeQuery }) {
+export default function Header({ view, onChangeView, watchlistCount, query, onChangeQuery }) {
   return (
     <header className="header">
       <div className="header__top">
@@ -16,11 +16,11 @@ export default function Header({ view, onChangeView, favoriteCount, query, onCha
             Discover
           </button>
           <button
-            className={"tab" + (view === "favorites" ? " tab--active" : "")}
-            onClick={() => onChangeView("favorites")}
+            className={"tab" + (view === "watchlist" ? " tab--active" : "")}
+            onClick={() => onChangeView("watchlist")}
           >
-            Favorites
-            {favoriteCount > 0 && <span className="tab__count">{favoriteCount}</span>}
+            Watchlist
+            {watchlistCount > 0 && <span className="tab__count">{watchlistCount}</span>}
           </button>
         </nav>
       </div>

@@ -292,6 +292,135 @@
   width: 30%;
 }
 
+/* ---- Watchlist ---- */
+.watchlist__section + .watchlist__section {
+  margin-top: 28px;
+}
+.watchlist__heading {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--gold);
+  margin: 0 0 12px;
+}
+.watchlist__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.watch-entry {
+  display: flex;
+  gap: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px 14px;
+}
+.watch-entry__poster {
+  width: 56px;
+  flex-shrink: 0;
+  aspect-ratio: 2 / 3;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.watch-entry__poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.watch-entry__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.watch-entry__title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ivory);
+  margin: 0;
+}
+.watch-entry__primary {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--gold);
+  color: var(--surface);
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.watch-entry__primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.watch-entry__footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 2px;
+}
+.watch-entry__link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 11.5px;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.watch-entry__link:hover {
+  color: var(--ivory);
+}
+.watch-entry__link--danger:hover {
+  color: var(--velvet);
+}
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.review-form__rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gold);
+  font-size: 12px;
+  width: fit-content;
+}
+.review-form__rating input {
+  width: 48px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--ivory);
+  font-size: 12.5px;
+  padding: 4px 6px;
+}
+.review-form textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--ivory);
+  font-size: 12.5px;
+  padding: 7px 9px;
+  resize: vertical;
+  font-family: inherit;
+}
+.review-form textarea::placeholder {
+  color: #5a5e6e;
+}
+
 .sentinel {
   height: 1px;
 }

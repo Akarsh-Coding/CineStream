@@ -1,9 +1,9 @@
-import { Heart } from "lucide-react";
+import { Bookmark } from "lucide-react";
 import { IMG_BASE } from "../api/tmdb";
 import RatingBadge from "./RatingBadge";
 import PosterFallback from "./PosterFallback";
 
-export default function MovieCard({ movie, isFavorite, onToggleFavorite }) {
+export default function MovieCard({ movie, inWatchlist, onToggleWatchlist }) {
   const year = (movie.release_date || "").slice(0, 4) || "\u2014";
 
   return (
@@ -21,12 +21,12 @@ export default function MovieCard({ movie, isFavorite, onToggleFavorite }) {
         )}
         <RatingBadge value={movie.vote_average} />
         <button
-          className={"heart-btn" + (isFavorite ? " heart-btn--active" : "")}
-          onClick={() => onToggleFavorite(movie)}
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-          aria-pressed={isFavorite}
+          className={"heart-btn" + (inWatchlist ? " heart-btn--active" : "")}
+          onClick={() => onToggleWatchlist(movie)}
+          aria-label={inWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+          aria-pressed={inWatchlist}
         >
-          <Heart size={17} fill={isFavorite ? "currentColor" : "none"} strokeWidth={2} />
+          <Bookmark size={17} fill={inWatchlist ? "currentColor" : "none"} strokeWidth={2} />
         </button>
       </div>
       <div className="card__perf" aria-hidden="true">

@@ -4,6 +4,7 @@ import SkeletonCard from "./SkeletonCard";
 export default function MovieGrid({
   movies,
   watchlistIds,
+  pendingMovieIds,
   onToggleWatchlist,
   loading,
   sentinelRef,
@@ -17,6 +18,7 @@ export default function MovieGrid({
             key={movie.id}
             movie={movie}
             inWatchlist={watchlistIds.has(movie.id)}
+            isPending={pendingMovieIds?.has(movie.id)}
             onToggleWatchlist={onToggleWatchlist}
           />
         ))}

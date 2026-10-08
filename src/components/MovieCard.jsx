@@ -3,7 +3,7 @@ import { IMG_BASE } from "../api/tmdb";
 import RatingBadge from "./RatingBadge";
 import PosterFallback from "./PosterFallback";
 
-export default function MovieCard({ movie, inWatchlist, onToggleWatchlist }) {
+export default function MovieCard({ movie, inWatchlist, isPending, onToggleWatchlist }) {
   const year = (movie.release_date || "").slice(0, 4) || "\u2014";
 
   return (
@@ -23,6 +23,7 @@ export default function MovieCard({ movie, inWatchlist, onToggleWatchlist }) {
         <button
           className={"heart-btn" + (inWatchlist ? " heart-btn--active" : "")}
           onClick={() => onToggleWatchlist(movie)}
+          disabled={isPending}
           aria-label={inWatchlist ? "Remove from watchlist" : "Add to watchlist"}
           aria-pressed={inWatchlist}
         >

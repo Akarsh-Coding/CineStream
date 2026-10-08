@@ -24,6 +24,17 @@ export async function createPost(payload) {
   return handle(res);
 }
 
+// For requests that include an image file. No Content-Type header here on purpose —
+// when body is a FormData instance, the browser sets multipart/form-data with the
+// correct boundary itself. Setting it manually breaks the upload.
+export async function createPostWithImage(formData) {
+  const res = await fetch(`${API_BASE}/posts`, {
+    method: "POST",
+    body: formData,
+  });
+  return handle(res);
+}
+
 export async function updatePost(id, payload) {
   const res = await fetch(`${API_BASE}/posts/${id}`, {
     method: "PUT",

@@ -19,7 +19,9 @@ export default function QuickAddForm({ onAdd }) {
         title: trimmed,
         poster_path: "",
       });
-      setTitle("");
+      setTitle(""); // only clear on success — keep the typed title if the request failed
+    } catch (err) {
+      // already surfaced via the shared actionError banner
     } finally {
       setSubmitting(false);
     }

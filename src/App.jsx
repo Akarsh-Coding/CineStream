@@ -28,6 +28,8 @@ export default function App() {
     watchlist,
     loading: watchlistLoading,
     error: watchlistError,
+    actionError: watchlistActionError,
+    pendingIds: watchlistPendingIds,
     entryFor,
     addToWatchlist,
     removeFromWatchlist,
@@ -35,6 +37,9 @@ export default function App() {
     markAsWantToWatch,
     submitReview,
   } = useWatchlist();
+
+  // Movie ids with an add/remove in flight from the Discover tab's bookmark button
+  const [pendingMovieIds, setPendingMovieIds] = useState(new Set());
 
   const loadPage = useCallback(async (pageNum, q) => {
     const myRequestId = ++requestIdRef.current;
@@ -83,6 +88,7 @@ export default function App() {
 
   const handleToggleWatchlist = useCallback(
     async (movie) => {
+      setPendingMovieIds((prev) => new Set(prev).add(movie.id));
       try {
         const existing = entryFor(movie.id);
         if (existing) {
@@ -91,7 +97,14 @@ export default function App() {
           await addToWatchlist(movie);
         }
       } catch (err) {
+        // already surfaced via the shared watchlistActionError banner on the Watchlist tab
         console.error("Failed to update watchlist:", err);
+      } finally {
+        setPendingMovieIds((prev) => {
+          const next = new Set(prev);
+          next.delete(movie.id);
+          return next;
+        });
       }
     },
     [entryFor, addToWatchlist, removeFromWatchlist]
@@ -128,6 +141,8 @@ export default function App() {
             watchlist={watchlist}
             loading={watchlistLoading}
             error={watchlistError}
+            actionError={watchlistActionError}
+            pendingIds={watchlistPendingIds}
             onAdd={addToWatchlist}
             onMarkWatched={markAsWatched}
             onMarkWantToWatch={markAsWantToWatch}
@@ -143,6 +158,7 @@ export default function App() {
             <MovieGrid
               movies={movies}
               watchlistIds={watchlistIds}
+              pendingMovieIds={pendingMovieIds}
               onToggleWatchlist={handleToggleWatchlist}
               loading={loading}
               sentinelRef={sentinelRef}

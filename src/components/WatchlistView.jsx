@@ -3,6 +3,7 @@ import { Bookmark, Check, Star, Trash2, Loader2, AlertTriangle } from "lucide-re
 import { IMG_BASE } from "../api/tmdb";
 import PosterFallback from "./PosterFallback";
 import EmptyState from "./EmptyState";
+import QuickAddForm from "./QuickAddForm";
 
 function WatchlistEntry({ entry, onMarkWatched, onMarkWantToWatch, onRemove, onSubmitReview }) {
   const [rating, setRating] = useState(entry.rating ?? "");
@@ -86,6 +87,7 @@ export default function WatchlistView({
   watchlist,
   loading,
   error,
+  onAdd,
   onMarkWatched,
   onMarkWantToWatch,
   onRemove,
@@ -109,11 +111,14 @@ export default function WatchlistView({
 
   if (watchlist.length === 0) {
     return (
-      <EmptyState
-        icon={Bookmark}
-        title="Your watchlist is empty"
-        subtitle="Tap the bookmark on any poster in Discover to add it here."
-      />
+      <div className="watchlist">
+        <QuickAddForm onAdd={onAdd} />
+        <EmptyState
+          icon={Bookmark}
+          title="Your watchlist is empty"
+          subtitle="Tap the bookmark on any poster in Discover, or add one by title above."
+        />
+      </div>
     );
   }
 
@@ -124,6 +129,8 @@ export default function WatchlistView({
 
   return (
     <div className="watchlist">
+      <QuickAddForm onAdd={onAdd} />
+
       {wantToWatch.length > 0 && (
         <section className="watchlist__section">
           <h3 className="watchlist__heading">Want to Watch</h3>

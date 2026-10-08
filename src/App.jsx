@@ -128,6 +128,7 @@ export default function App() {
             watchlist={watchlist}
             loading={watchlistLoading}
             error={watchlistError}
+            onAdd={addToWatchlist}
             onMarkWatched={markAsWatched}
             onMarkWantToWatch={markAsWantToWatch}
             onRemove={removeFromWatchlist}

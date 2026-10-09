@@ -1,11 +1,13 @@
 # Cine-Stream 🎬
 
-A full-stack movie discovery application powered by the **TMDB API**, with a React frontend and a lightweight Node/Express backend. Cine-Stream lets users discover trending movies, search for titles, continuously load more results, and save movies to a personal favorites list.
+A full-stack movie discovery and watchlist application. Cine-Stream pulls movie data from the **TMDB API** through a lightweight Node/Express proxy, and stores each user's **watchlist, ratings, and reviews** in MongoDB through a separate backend, **[DataStorm-API](https://github.com/Akarsh-Coding/DataStorm-API)**.
 
-> **Project status:** Core discovery features (browsing, search, infinite scroll, and favorites) are implemented, now backed by a Node/Express server. AI-powered recommendations are planned for a future release.
+> **Project status:** Discovery (browse, search, infinite scroll) and the full watchlist pipeline (create, read, update, delete, image upload) are implemented and wired to a live backend. AI-powered recommendations are planned for a future release.
 
 **Live Demo:** https://cinestream-zeq2.onrender.com/  
-**GitHub Repository:** https://github.com/Akarsh-Coding/CineStream/tree/main
+**GitHub Repository:** https://github.com/Akarsh-Coding/CineStream/tree/main  
+**Backend (DataStorm-API) repository:** https://github.com/Akarsh-Coding/DataStorm-API  
+**Backend live URL:** `<add your Render URL for DataStorm-API here>`
 
 ---
 
@@ -15,22 +17,32 @@ A full-stack movie discovery application powered by the **TMDB API**, with a Rea
 
 - ⚛️ React + Vite project setup
 - 🎬 TMDB API integration via a backend proxy
-- 🔐 API key held server-side, never exposed to the browser
-- 🧭 Discover and Favorites views
+- 🔐 TMDB API key held server-side, never exposed to the browser
+- 🧭 Discover and Watchlist views
 - 🔎 Movie search
 - 🖼️ Responsive movie-card grid
 - ⭐ Movie ratings and release years
-- ❤️ Favorites functionality
-- ⚠️ Loading, error, and empty states
 - 🎨 Dark, cinema-inspired user interface
 
-### Performance & Persistence
+### Watchlist, Reviews & Persistence (backed by MongoDB)
+
+- 🔖 Bookmark any movie in Discover to add it to your watchlist
+- 📋 Watchlist split into **Want to Watch** and **Watched** sections
+- ✅ Mark a movie as watched (or move it back to Want to Watch)
+- ⭐ Rate a watched movie (1–10) and write a review
+- ➕ Quick-add form to add a movie by title, with an optional custom thumbnail
+- 🖼️ Thumbnail upload sent as `multipart/form-data`; the image is hosted on Cloudinary and only its URL is stored
+- 🗑️ Remove entries, with the list updating instantly (no page reload)
+- 💾 Data persists across hard refreshes because it lives in MongoDB Atlas, not in the browser
+
+### Performance & Reliability
 
 - ♾️ Infinite scrolling for movie discovery
 - 🔍 Debounced search input to reduce unnecessary API requests
-- ❤️ Persistent favorites stored locally in the browser
-- 🚦 Loading-more state while additional pages are fetched
 - 🛡️ Request handling to prevent outdated API responses from overwriting newer results
+- 🚦 Loading states for every request: initial fetch, load-more, and per-item pending states for create, update, and delete
+- ⚠️ Inline error banners when the backend is unreachable or returns an error
+- 🧱 React error boundary so an unexpected render crash shows a clean fallback instead of a blank screen
 
 ---
 
@@ -40,15 +52,47 @@ A full-stack movie discovery application powered by the **TMDB API**, with a Rea
 | --- | --- |
 | **React 18** | Frontend UI and application state |
 | **Vite** | Frontend development server and production build |
-| **Node.js / Express** | Backend server that proxies TMDB requests and holds the API key |
+| **Node.js / Express** | Server that proxies TMDB requests, holds the TMDB key, and serves the built frontend in production |
 | **TMDB API** | Movie data, posters, ratings, and search |
+| **DataStorm-API** | Separate Express + MongoDB backend that stores watchlist entries and reviews |
+| **MongoDB Atlas** | Persistent storage (accessed through DataStorm-API) |
+| **Cloudinary** | Image hosting for uploaded thumbnails (accessed through DataStorm-API) |
 | **Lucide React** | UI icons |
 | **JavaScript (ES Modules)** | Application logic |
 | **CSS** | Styling and responsive layout |
-| **LocalStorage** | Favorites persistence |
 | **Render** | Deployment (Node web service) |
 
-The `main` branch uses React 18.3.1, Vite 5.4.x, and Lucide React 0.383.x on the frontend, with an Express server under `server/`.
+---
+
+## 🧩 Architecture
+
+CineStream and DataStorm-API are two separate repositories and two separate deployments.
+
+```text
+                    ┌──────────────────────────────────────────┐
+                    │          CineStream (this repo)          │
+                    │                                          │
+ Browser ──────────►│  React app (built by Vite)               │
+                    │  served by Express  (server/index.js)    │
+                    │                                          │
+                    │  /api/movies/*  ──►  TMDB API            │
+                    │   (TMDB key stays server-side)           │
+                    └───────────────┬──────────────────────────┘
+                                    │
+          Browser calls directly    │  VITE_API_URL
+          (watchlist CRUD + upload) ▼
+                    ┌──────────────────────────────────────────┐
+                    │        DataStorm-API (separate repo)     │
+                    │  Express + CORS + multer                 │
+                    │       │                    │             │
+                    │       ▼                    ▼             │
+                    │  MongoDB Atlas        Cloudinary         │
+                    │  (posts)              (image files)      │
+                    └──────────────────────────────────────────┘
+```
+
+- **Movie data** goes browser → CineStream's Express server → TMDB.
+- **Watchlist data** goes browser → DataStorm-API → MongoDB. This is a cross-origin request, so DataStorm-API must allow CineStream's origin through CORS (see `CLIENT_ORIGIN` below).
 
 ---
 
@@ -56,7 +100,7 @@ The `main` branch uses React 18.3.1, Vite 5.4.x, and Lucide React 0.383.x on the
 
 ### 1. Discover — Trending Movies
 
-The Discover page displays trending movies in a poster-based grid with ratings, release years, search, favorites, and infinite scrolling.
+The Discover page displays trending movies in a poster-based grid with ratings, release years, search, a watchlist bookmark, and infinite scrolling.
 
 ![Discover Movies](./screenshots/discover.png)
 
@@ -66,38 +110,50 @@ Searching returns matching titles from TMDB, fetched through the backend so no A
 
 ![Search Movies](./screenshots/search.png)
 
-### 3. Favorites
+### 3. Favorites (earlier version)
 
-The Favorites view displays movies saved by the user and keeps the saved list available through browser persistence.
+The original Sprint 08 Favorites view, which stored saved movies in browser `localStorage`. This has since been replaced by the MongoDB-backed Watchlist described above, so this screenshot should be refreshed.
 
 ![Favorites](./screenshots/favorites.png)
 
 ---
 
-## 🔑 API Key Setup
+## 🔐 Environment Variables
 
-Cine-Stream uses the **TMDB API v3**. On the `main` branch, the API key lives entirely on the **server side** — the frontend never sees, requests, or stores it, and there's no more in-app key-entry screen.
+CineStream uses **two separate** env files because two different programs read them.
 
-### Backend Environment Variable
+| File | Variable | Read by | Purpose |
+| --- | --- | --- | --- |
+| `server/.env` | `TMDB_API_KEY` | `server/index.js` (at runtime) | Key used to call TMDB on the frontend's behalf |
+| `.env` (project root) | `VITE_API_URL` | Vite (**at build time**) | Base URL of your DataStorm-API backend |
 
-Create a `.env` file inside the `server/` directory:
+### `server/.env`
 
 ```env
 TMDB_API_KEY=your_tmdb_api_key
 ```
 
-The Express server reads this key and uses it to call TMDB on the frontend's behalf. This means:
+### `.env` (project root)
 
-- Visitors to the live demo don't need a TMDB API key of their own.
-- The key is never bundled into client-side JavaScript or visible in the browser.
-- Restart the backend server after adding or changing the environment variable.
+```env
+VITE_API_URL=http://localhost:5000
+```
 
-> Never commit a real API key or `.env` file containing secrets to GitHub.
-> *(Double-check that `TMDB_API_KEY` matches the variable name your `server/index.js` actually reads — update this section if it differs.)*
+- If `VITE_API_URL` is unset, the app falls back to `http://localhost:5000`.
+- In production, set it to your live DataStorm-API URL with **no trailing slash**, for example `https://your-backend.onrender.com`.
+- Vite replaces `import.meta.env.VITE_API_URL` with its value **while building**, not while running. If you change it, you must rebuild/redeploy.
+
+Copy `.env.example` and `server/.env.example` to get started. Never commit real `.env` files.
 
 ---
 
 ## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- A TMDB API key (https://www.themoviedb.org/settings/api)
+- A running instance of **DataStorm-API** (locally or deployed). See its README for setup.
 
 ### 1. Clone the repository
 
@@ -106,96 +162,121 @@ git clone https://github.com/Akarsh-Coding/CineStream.git
 cd CineStream
 ```
 
-`main` is the current default branch and includes the backend server.
-
 ### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-> If `server/` has its own `package.json`, also run `npm install` inside `server/`.
+### 3. Configure environment variables
 
-### 3. Configure the TMDB API key
+Create `server/.env` with your `TMDB_API_KEY`, and a root `.env` with `VITE_API_URL` (see above).
 
-Create a `.env` file inside `server/`:
+### 4. Start DataStorm-API
 
-```env
-TMDB_API_KEY=your_tmdb_api_key
-```
-
-### 4. Start the backend server
-
-```bash
-node server/index.js
-```
-
-> Swap this for the actual start script in your `package.json` (e.g. `npm run server`) if one exists.
-
-### 5. Start the frontend development server
-
-In a separate terminal:
+In its own repo and terminal (listens on port 5000 by default):
 
 ```bash
 npm run dev
 ```
 
-The Vite development server will provide a local URL in the terminal. The frontend calls the backend for all TMDB data.
+### 5. Start the TMDB proxy server
 
-### 6. Create a production build
+From the CineStream folder (listens on port 5174 by default):
+
+```bash
+npm run dev:server
+```
+
+### 6. Start the frontend dev server
+
+In a third terminal:
+
+```bash
+npm run dev
+```
+
+Open the local URL Vite prints (usually `http://localhost:5173`). During development, Vite forwards `/api/*` requests to the TMDB proxy on port 5174 (configured in `vite.config.js`). Watchlist requests go straight to DataStorm-API, so the backend's `CLIENT_ORIGIN` must be `http://localhost:5173`.
+
+### 7. Create and preview a production build
 
 ```bash
 npm run build
+npm start
 ```
 
-### 7. Preview the production build
+`npm start` runs `server/index.js`, which serves the built `dist/` folder and the `/api/movies/*` proxy from a single process, exactly as it does on Render.
 
-```bash
-npm run preview
-```
+---
 
-For the deployed version on Render, the Express server also serves the built frontend, so only one process runs in production.
+## ☁️ Deployment (Render)
+
+CineStream deploys as a **single Render Web Service**, because its Express server both proxies TMDB and serves the built frontend. This is why it is deployed on Render rather than as a static site.
+
+| Setting | Value |
+| --- | --- |
+| Build Command | `npm install && npm run build` |
+| Start Command | `npm start` |
+
+Environment variables (set in the Render dashboard, not in code):
+
+| Variable | Value |
+| --- | --- |
+| `TMDB_API_KEY` | Your TMDB API key |
+| `VITE_API_URL` | Your live DataStorm-API URL (no trailing slash). Must be set **before** the build runs |
+
+After deploying, set `CLIENT_ORIGIN` on the DataStorm-API service to this app's live URL, otherwise the browser will block the watchlist requests with a CORS error.
+
+> Render's free tier spins services down after inactivity, so the first request can take 30–50 seconds. Open both live URLs a minute or two before a demo.
+
+### Post-deploy verification checklist
+
+1. Open the DataStorm-API root URL and confirm it responds with `The Data Hub API is running`.
+2. On the live CineStream site, run `fetch('<backend-url>/posts')` in the browser console and confirm there is no CORS error.
+3. Open the Watchlist tab and confirm entries load (or the empty state shows).
+4. Add a movie and confirm it appears immediately.
+5. Hard refresh and confirm the entry is still there.
+6. Mark a movie watched, add a rating and review, then hard refresh to confirm it persisted.
+7. Remove an entry, hard refresh, and confirm it stays gone.
+8. Quick-add a movie with a thumbnail and confirm the image `src` is a `res.cloudinary.com` URL that still loads after a refresh.
 
 ---
 
 ## 🔎 How It Works
 
-```text
-User opens Cine-Stream (frontend)
-        │
-        ▼
-    Discover Page
-        │
-        ├── Search movies
-        ├── Infinite scroll
-        │
-        ▼
-  Backend (Express)
-        │
-        ▼
-    TMDB API
- (key stored server-side)
-        │
-        ▼
-   Movie Results
-        │
-        ├── Save to Favorites
-        │
-        ▼
-   Favorites View
+### Discover Flow
+
+Search input is debounced before the request is made to the proxy server, which queries TMDB. When the user reaches the end of the loaded list, the next page is requested and appended.
+
+### Watchlist Flow
+
+Every watchlist entry is one document in MongoDB (a "post" in DataStorm-API), tied to a TMDB movie.
+
+| Action | Request | UI update |
+| --- | --- | --- |
+| Page load | `GET /posts` | List rendered from the response |
+| Add (bookmark or quick-add) | `POST /posts` | New entry prepended to local state |
+| Add with thumbnail | `POST /posts` as `multipart/form-data` | Same, with the Cloudinary URL as the poster |
+| Mark watched / move back / save review | `PUT /posts/:id` | Entry replaced in local state |
+| Remove | `DELETE /posts/:id` | Entry filtered out of local state |
+
+All updates apply to local React state after the request succeeds, so nothing needs a page reload. Each in-flight action disables its own controls, and failures show an inline error banner.
+
+### Entry Shape
+
+```json
+{
+  "movieId": 550,
+  "movieTitle": "Fight Club",
+  "moviePoster": "/abc123.jpg",
+  "status": "want_to_watch",
+  "rating": 9,
+  "content": "Great ending.",
+  "createdAt": "2026-09-01T05:41:50.190Z"
+}
 ```
 
-### Search Flow
-
-Search input is debounced before the request is made to the backend, which then queries TMDB. This prevents a request from being triggered for every individual keystroke.
-
-### Infinite Scroll Flow
-
-When the user reaches the end of the currently loaded movie list, the frontend requests the next page from the backend, which fetches it from TMDB and returns it to be appended to the existing results.
-
-### Favorites Flow
-
-Clicking the heart icon toggles a movie's favorite state. Favorites are persisted locally so they remain available after refreshing the page.
+`status` is `want_to_watch` or `watched`. `rating` and `content` are optional and are meant to be filled once a movie is watched. Entries added through the quick-add form use a negative, timestamp-based `movieId` so they can never collide with a real TMDB id.
 
 ---
 
@@ -204,39 +285,38 @@ Clicking the heart icon toggles a movie's favorite state. Favorites are persiste
 ```text
 CineStream/
 ├── server/
-│   ├── .env
-│   └── index.js
+│   ├── .env.example
+│   └── index.js            # TMDB proxy + serves built frontend
 ├── src/
 │   ├── api/
-│   │   └── tmdb.js
+│   │   ├── tmdb.js         # movie data (via the proxy)
+│   │   └── posts.js        # watchlist CRUD + multipart upload (DataStorm-API)
 │   ├── components/
 │   │   ├── EmptyState.jsx
+│   │   ├── ErrorBoundary.jsx
 │   │   ├── Header.jsx
 │   │   ├── MovieCard.jsx
 │   │   ├── MovieGrid.jsx
 │   │   ├── PosterFallback.jsx
+│   │   ├── QuickAddForm.jsx
 │   │   ├── RatingBadge.jsx
-│   │   └── SkeletonCard.jsx
+│   │   ├── SkeletonCard.jsx
+│   │   └── WatchlistView.jsx
 │   ├── hooks/
 │   │   ├── useDebouncedValue.js
-│   │   ├── useFavorites.js
-│   │   └── useInfiniteScroll.js
+│   │   ├── useInfiniteScroll.js
+│   │   └── useWatchlist.js
 │   ├── App.jsx
 │   ├── App.css
 │   ├── index.css
 │   └── main.jsx
 ├── screenshots/
-│   ├── discover.png
-│   ├── favorites.png
-│   └── search.png
+├── .env.example
 ├── .gitignore
 ├── index.html
 ├── package.json
-├── package-lock.json
 └── vite.config.js
 ```
-
-> `ApiKeyGate.jsx` from the previous frontend-only version is gone — there's no more client-facing key entry screen now that the key lives in `server/`.
 
 ---
 
@@ -245,10 +325,11 @@ CineStream/
 | Milestone | Scope | Status |
 | --- | --- | --- |
 | **Core & Search** | Base architecture, TMDB API integration, UI, and search | ✅ Completed |
-| **Performance & Persistence** | Infinite scroll, debounced search, and persistent favorites | ✅ Completed |
-| **AI & Asset Optimization** | AI-powered recommendations and asset optimization | ⏳ Planned |
-
-The current version intentionally documents only the work completed so far.
+| **Performance & Persistence** | Infinite scroll, debounced search | ✅ Completed |
+| **Backend Proxy** | Express server holding the TMDB key | ✅ Completed |
+| **Full-Stack Integration** | Watchlist, reviews, and image uploads backed by DataStorm-API and MongoDB | ✅ Completed |
+| **Deployment** | Both services live on Render with environment-based configuration | ✅ Completed |
+| **AI & Asset Optimization** | AI-powered recommendations | ⏳ Planned |
 
 ---
 
@@ -258,24 +339,26 @@ This project was built as a practical exercise in:
 
 - Building a React application from a structured engineering specification
 - Working with a third-party REST API
-- Managing asynchronous API requests and loading states
-- Implementing debounced user input
-- Implementing infinite scrolling with the `IntersectionObserver` approach
-- Persisting client-side application data with `localStorage`
-- Building a small Node/Express backend to proxy a third-party API and keep secrets off the client
-- Designing reusable React components and custom hooks
-- Handling API errors and empty states
-- Deploying a Vite/React application with environment configuration
+- Managing asynchronous requests, loading states, and error states
+- Implementing debounced input and infinite scrolling
+- Building a small Node/Express proxy to keep secrets off the client
+- Integrating a React SPA with a separate Node/MongoDB REST API
+- Resolving CORS between two origins
+- Implementing a full CRUD UI pipeline with immediate local state updates
+- Uploading files with `FormData` and hosting them on a cloud CDN
+- Managing environment variables across local and production environments
+- Deploying a full-stack application to Render
 
 ---
 
 ## ⚠️ Limitations
 
-- Movie data depends on the TMDB API.
-- A valid TMDB API key is required on the server (configured once by whoever deploys the app — individual users don't need one).
-- Favorites are stored locally in the browser and are not associated with a user account.
-- There is a lightweight Express backend, but no database — the backend proxies requests, it doesn't persist data.
-- AI-powered recommendations are **not yet implemented** and are planned for a future release.
+- Movie data depends on the TMDB API, and a valid TMDB key is required on the server.
+- There is no user authentication. The watchlist is a single shared list for everyone using a given deployment.
+- Movies added through the quick-add form are not linked to a TMDB record.
+- Uploaded thumbnails are limited to 5 MB and image file types.
+- On Render's free tier, services may take 30–50 seconds to wake after inactivity.
+- AI-powered recommendations are **not yet implemented**.
 - The project is intended for **learning and portfolio purposes only** and is not intended for commercial use.
 
 ---

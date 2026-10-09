@@ -324,11 +324,13 @@
 
 /* ---- Watchlist ---- */
 .quick-add {
-  display: flex;
-  gap: 8px;
   margin-bottom: 20px;
 }
-.quick-add input {
+.quick-add__row {
+  display: flex;
+  gap: 8px;
+}
+.quick-add__row input[type="text"] {
   flex: 1;
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -337,10 +339,25 @@
   font-size: 13px;
   padding: 9px 12px;
 }
-.quick-add input::placeholder {
+.quick-add__row input[type="text"]::placeholder {
   color: #5a5e6e;
 }
-.quick-add button {
+.quick-add__file {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  flex-shrink: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.quick-add__file:hover {
+  color: var(--gold);
+}
+.quick-add__row button[type="submit"] {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -354,9 +371,40 @@
   cursor: pointer;
   white-space: nowrap;
 }
-.quick-add button:disabled {
+.quick-add__row button[type="submit"]:disabled {
   opacity: 0.6;
   cursor: default;
+}
+.quick-add__preview {
+  position: relative;
+  width: 52px;
+  margin-top: 8px;
+  aspect-ratio: 2 / 3;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.quick-add__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.quick-add__preview button {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  border: none;
+  border-radius: 50%;
+  color: var(--ivory);
+  cursor: pointer;
+  padding: 0;
 }
 
 .watchlist__section + .watchlist__section {
